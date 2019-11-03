@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context
+                           http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/tx
+                           http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <!--引入dbmysql.properties属性文件-->
+    <context:property-placeholder location="classpath:properties/dbmysql.properties"/>
+
+    <!--开启注解支持-->
+    <context:annotation-config/>
+
+    <!--自动扫描带注解的包-->
+    <context:component-scan base-package="com.ssm"/>
+
+    <!--配置数据库(druid)连接池-->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="driverClassName" value="${jdbc.driver}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+    </bean>
+
+    <!-- 创建sqlsessionfactory的替代sqlsessionfactoryBean,并为sql中的**mapper.xml注册 -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <!-- 第一个DataSource是class中的内容,第二个DataSource是连接数据库中的标识 -->
+        <property name="dataSource" ref="dataSource"/>
+        <!-- 注册mapper文件,用数组的形式,可能会有多个mapper -->
+        <property name="mapperLocations">
+            <array>
+                <value>classpath:sql/*.xml</value>
+                <!-- 一定要加入classpath: , 作用在src下查找需要的文件 -->
+            </array>
+        </property>
+        <!-- 为类起别名,方便**mapper.xml的使用,默认是类名,或者类名的首字母小写 -->
+        <property name="typeAliasesPackage" value="com.ssm.model"/>
+    </bean>
+
+    <!-- 创建所有的dao对象,默认id为扫描到的类名首字母小写 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!-- name是class的内容,value的值是连接sqlSessionFactoryBean的作用 -->
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+        <property name="basePackage" value="com.ssm.dao"/>
+    </bean>
+
+    <!--配置Spring框架声明式事务管理-->
+    <!--配置事务管理器-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <!-- 依赖于数据源对象 -->
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!--开启事务注解扫描-->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+</beans>
